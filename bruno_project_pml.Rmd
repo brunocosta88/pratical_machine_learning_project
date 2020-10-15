@@ -1,0 +1,155 @@
+---
+title: "Bruno's Pratical Machine Learning Project"
+author: "Bruno Martins"
+date: "13/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This is Bruno's final project for Machine Learning Class on Coursera. The goal of this project is to predict the manner in which some people did exercise, using the dataset from Human Activity Recognition project (http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har).
+
+## 1) Selection of the variables
+
+The first step was trying to analyze the correlation between variables, and try to exclude those ones with great correlation with others. My approach was to create a correlation table between training dataset columns and exclude whatever had more than 13 correlations.
+
+```{r analys_var, echo=T}
+library(caret)
+
+setwd("C:/Users/bruno/OneDrive - Globo Comunicação e Participações sa/Pessoal/Estudos/Coursera/Machine Learning/FinalProject")
+training <- read.csv("pml-training.csv")
+testing <- read.csv("pml-testing.csv")
+
+#1.1) Analyzing the variables
+
+# The objective is trying to analyzing the correlation between the the sensor variables
+
+training2 <- training[,-c(1:7,160)]
+training2 <- sapply(training2,as.numeric)
+training.cor <- cor(training2)
+training2 <- as.data.frame(training2)
+
+# Removing variables with many correlations
+
+return.vector <- function(x, th){
+    y <- x[ - which(x <= th)]
+    y <- na.exclude(y)
+    attr(y, "na.action") <- NULL
+    attr(y, "class") <- NULL
+    #print(y)
+    return(y)
+}
+training.great.cor <- apply(training.cor,2, return.vector,.8)
+training.great.cor2 <- sapply(training.great.cor, length)
+training.great.cor3 <- return.vector(training.great.cor2,14) #picking variable with more than 14 correlations
+training3 <- training2[,-which(names(training2) %in% names(training.great.cor3))] #excluding variables with more than 14 correlations
+```
+
+After that I checked if all the excluded variables have at least one correlated variable in the remaining dataset. THe function corr.check return TRUE if the excluded variable has one or more correlations and return FALSE if doesn't. The goal of this is don't lose any important information for the creation of the model.
+
+With this setup (excluding variable with 14 or more correlations) I could verify that all excluded variables have at least one correlated column in the remaining dataset.
+
+```{r corr_chk, echo=T}
+
+corr.check <- function(x,df1,df2){
+    chk <- names(df1[x][[1]]) %in% names(df2)
+    #print(chk)
+    chk <- sum(chk)
+    if (chk == 0){
+        #print(names(df1[x]))
+        return(FALSE)
+    }else{
+        return(TRUE)
+    }
+    }
+test <- sapply(names(training.great.cor3),corr.check,training.great.cor,training3)
+table(test)
+
+#adding the classe variable
+
+training4 <- cbind(training3,classe = training[,160])
+training4[is.na(training4)] <- 0
+
+```
+
+## 2) Cross Validation
+
+I splitted the training dataset in training (75%) and validation (25%). The goal of this was to evaluate the accuracy of the model before applying on the testing dataset.
+
+```{r cross_val, echo=T}
+
+inTrain <- createDataPartition(training4$classe, p=0.75, list=FALSE)
+training5 <- training4[inTrain,]
+validation <- training4[-inTrain,]
+
+```
+
+## 3) Building the Model
+
+I follow the strategy of combining different models to get a better prediction. I tried some models and I chose the best performance versus computational complexity combination. So I'm working wit rpart2, svmLinear and lda, and after that combining the result of them with an xgbTree model.
+
+
+```{r model, ech = T}
+#we will combine different models
+
+model1 <- train(classe ~ ., training5, method = "rpart2")
+model2 <- train(classe ~ ., training5, method = "svmLinear")
+model3 <- train(classe ~ .,training5, method = "lda")
+
+predict1 <- predict(model1, validation)
+predict2 <- predict(model2, validation)
+predict3 <- predict(model3, validation)
+
+predict.df <- as.data.frame(list(validation$classe, predict1,predict2,predict3))
+names(predict.df) <- c("classe", "rpart","bayesglm","lda")
+
+model4 <- train(classe ~ ., predict.df, method = "xgbTree")
+predict4 <- predict(model4,predict.df)
+
+cm1 <- confusionMatrix(reference = validation$classe, data = predict1 )
+cm2 <- confusionMatrix(reference = validation$classe, data = predict2 )
+cm3 <- confusionMatrix(reference = validation$classe, data = predict3)
+cm4 <- confusionMatrix(reference = predict.df$classe, data = predict4 )
+
+cm1$overall
+cm2$overall
+cm3$overall
+cm4$overall
+
+```
+
+## 4) Out of sample error
+
+The estimation for Out of Sample Error (OOB) is:
+
+```{r oob, echo = T}
+oob <- 1 - cm4$overall[1]
+names(oob) <- NULL
+oob
+
+```
+
+## 5) Predicting 20 different test cases
+
+```{r predict, echo = T}
+
+testing2 <-testing[,which(names(testing) %in% names(training5))]
+testing2[is.na(testing2)] <- 0
+
+predict.comb <- function(dataset, modelA,modelB,modelC,modelD){
+    a <- predict(modelA, dataset)
+    b <- predict(modelB, dataset)
+    c <- predict(modelC, dataset)
+    d <- as.data.frame(list(a,b,c))
+    names(d) <- c("rpart","bayesglm","lda")
+    return(predict(modelD,d))
+}
+
+predict.test <- predict.comb(testing2,model1,model2,model3,model4)
+predict.test
+
+```
