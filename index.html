@@ -445,57 +445,7 @@ validation &lt;- training4[-inTrain,]</code></pre>
 model1 &lt;- train(classe ~ ., training5, method = &quot;rpart2&quot;)
 model2 &lt;- train(classe ~ ., training5, method = &quot;svmLinear&quot;)
 model3 &lt;- train(classe ~ .,training5, method = &quot;lda&quot;)</code></pre>
-<pre><code>## Warning in lda.default(x, grouping, ...): variables are collinear
 
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear
-
-## Warning in lda.default(x, grouping, ...): variables are collinear</code></pre>
 <pre class="r"><code>predict1 &lt;- predict(model1, validation)
 predict2 &lt;- predict(model2, validation)
 predict3 &lt;- predict(model3, validation)
