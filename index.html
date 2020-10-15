@@ -439,7 +439,7 @@ validation &lt;- training4[-inTrain,]</code></pre>
 </div>
 <div id="building-the-model" class="section level2">
 <h2>3) Building the Model</h2>
-<p>I follow the strategy of combining different models to get a better prediction. I tried some models and I chose the best performance versus computacional complexity combination. So I’m working wit rpart2, svmLinear and lda, and after thar combining the result of them with a xgbTree model.</p>
+<p>I follow the strategy of combining different models to get a better prediction. I tried some models and I chose the best performance versus computational complexity combination. So I’m working wit rpart2, svmLinear and lda, and after that combining the result of them with an xgbTree model.</p>
 <pre class="r"><code>#we will combine different models
 
 model1 &lt;- train(classe ~ ., training5, method = &quot;rpart2&quot;)
