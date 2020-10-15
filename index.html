@@ -371,11 +371,11 @@ summary {
 
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>This is Bruno’s final project for Machine Learning Class on Coursera. The goal of this project is to predict the manner in which some people did exercise, using the dataset from Human Activity Recognition project (<a href="http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har" class="uri">http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har</a>).</p>
+<p>This is Bruno’s final project for Machine Learning Classe o Coursera. The goal of this project is to predict the manner in which some people did exercise, using the dataset from Human Activity Recognition project (<a href="http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har" class="uri">http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har</a>).</p>
 </div>
 <div id="selection-of-the-variables" class="section level2">
 <h2>1) Selection of the variables</h2>
-<p>The first step was trying to analyze the correlation between variable, and try to exclude variables with great correlation with others. My approach was to create a correlation table between trainning dataset columns and exclude whatever had more than 13 correlations.</p>
+<p>The first step was trying to analyze the correlation between variables, and try to exclude those ones with great correlation with others. My approach was to create a correlation table between training dataset columns and exclude whatever had more than 13 correlations.</p>
 <pre class="r"><code>library(caret)</code></pre>
 <pre><code>## Warning: package &#39;caret&#39; was built under R version 3.6.3</code></pre>
 <pre><code>## Loading required package: lattice</code></pre>
@@ -432,10 +432,132 @@ training4[is.na(training4)] &lt;- 0</code></pre>
 </div>
 <div id="cross-validation" class="section level2">
 <h2>2) Cross Validation</h2>
-<p>I splited the training dataset in training (75%) and validation (25%). The goal of this was to evaluate the accuracy of the model before applying on the testing dataset.</p>
+<p>I splitted the training dataset in training (75%) and validation (25%). The goal of this was to evaluate the accuracy of the model before applying on the testing dataset.</p>
 <pre class="r"><code>inTrain &lt;- createDataPartition(training4$classe, p=0.75, list=FALSE)
 training5 &lt;- training4[inTrain,]
 validation &lt;- training4[-inTrain,]</code></pre>
+</div>
+<div id="building-the-model" class="section level2">
+<h2>3) Building the Model</h2>
+<p>I follow the strategy of combining different models to get a better prediction. I tried some models and I chose the best performance versus computacional complexity combination. So I’m working wit rpart2, svmLinear and lda, and after thar combining the result of them with a xgbTree model.</p>
+<pre class="r"><code>#we will combine different models
+
+model1 &lt;- train(classe ~ ., training5, method = &quot;rpart2&quot;)
+model2 &lt;- train(classe ~ ., training5, method = &quot;svmLinear&quot;)
+model3 &lt;- train(classe ~ .,training5, method = &quot;lda&quot;)</code></pre>
+<pre><code>## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear
+
+## Warning in lda.default(x, grouping, ...): variables are collinear</code></pre>
+<pre class="r"><code>predict1 &lt;- predict(model1, validation)
+predict2 &lt;- predict(model2, validation)
+predict3 &lt;- predict(model3, validation)
+
+predict.df &lt;- as.data.frame(list(validation$classe, predict1,predict2,predict3))
+names(predict.df) &lt;- c(&quot;classe&quot;, &quot;rpart&quot;,&quot;bayesglm&quot;,&quot;lda&quot;)
+
+model4 &lt;- train(classe ~ ., predict.df, method = &quot;xgbTree&quot;)
+predict4 &lt;- predict(model4,predict.df)
+
+cm1 &lt;- confusionMatrix(reference = validation$classe, data = predict1 )
+cm2 &lt;- confusionMatrix(reference = validation$classe, data = predict2 )
+cm3 &lt;- confusionMatrix(reference = validation$classe, data = predict3)
+cm4 &lt;- confusionMatrix(reference = predict.df$classe, data = predict4 )
+
+cm1$overall</code></pre>
+<pre><code>##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
+##   5.609706e-01   4.280335e-01   5.469462e-01   5.749224e-01   2.844617e-01 
+## AccuracyPValue  McnemarPValue 
+##   0.000000e+00  4.021723e-297</code></pre>
+<pre class="r"><code>cm2$overall</code></pre>
+<pre><code>##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
+##   7.756933e-01   7.147324e-01   7.637546e-01   7.873030e-01   2.844617e-01 
+## AccuracyPValue  McnemarPValue 
+##   0.000000e+00   1.377657e-32</code></pre>
+<pre class="r"><code>cm3$overall</code></pre>
+<pre><code>##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
+##   7.002447e-01   6.203978e-01   6.872035e-01   7.130471e-01   2.844617e-01 
+## AccuracyPValue  McnemarPValue 
+##   0.000000e+00   1.925703e-52</code></pre>
+<pre class="r"><code>cm4$overall</code></pre>
+<pre><code>##       Accuracy          Kappa  AccuracyLower  AccuracyUpper   AccuracyNull 
+##   7.997553e-01   7.457851e-01   7.882760e-01   8.108766e-01   2.844617e-01 
+## AccuracyPValue  McnemarPValue 
+##   0.000000e+00   9.041600e-20</code></pre>
+</div>
+<div id="out-of-sample-error" class="section level2">
+<h2>4) Out of sample error</h2>
+<p>The estimation for Out of Sample Error (OOB) is:</p>
+<pre class="r"><code>oob &lt;- 1 - cm4$overall[1]
+names(oob) &lt;- NULL
+oob</code></pre>
+<pre><code>## [1] 0.2002447</code></pre>
+</div>
+<div id="predicting-20-different-test-cases" class="section level2">
+<h2>5) Predicting 20 different test cases</h2>
+<pre class="r"><code>testing2 &lt;-testing[,which(names(testing) %in% names(training5))]
+testing2[is.na(testing2)] &lt;- 0
+
+predict.comb &lt;- function(dataset, modelA,modelB,modelC,modelD){
+    a &lt;- predict(modelA, dataset)
+    b &lt;- predict(modelB, dataset)
+    c &lt;- predict(modelC, dataset)
+    d &lt;- as.data.frame(list(a,b,c))
+    names(d) &lt;- c(&quot;rpart&quot;,&quot;bayesglm&quot;,&quot;lda&quot;)
+    return(predict(modelD,d))
+}
+
+predict.test &lt;- predict.comb(testing2,model1,model2,model3,model4)
+predict.test</code></pre>
+<pre><code>##  [1] C A B C A E D D A A C A B A E E A B B B
+## Levels: A B C D E</code></pre>
 </div>
 
 
