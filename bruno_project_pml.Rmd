@@ -20,7 +20,6 @@ The first step was trying to analyze the correlation between variables, and try 
 ```{r analys_var, echo=T}
 library(caret)
 
-setwd("C:/Users/bruno/OneDrive - Globo Comunicação e Participações sa/Pessoal/Estudos/Coursera/Machine Learning/FinalProject")
 training <- read.csv("pml-training.csv")
 testing <- read.csv("pml-testing.csv")
 
